@@ -10,17 +10,34 @@ import 'package:dynamic_theme/dynamic_theme.dart';
 
 void main() => runApp(MyApp());
 
+ThemeData _buildTheme(Brightness brightness) {
+  return brightness == Brightness.dark
+      ? ThemeData.dark().copyWith(
+          primaryColor: Colors.black,
+          textTheme: ThemeData.dark().textTheme.apply(
+                fontFamily: 'Product Sans',
+              ),
+          backgroundColor: Colors.black)
+      : ThemeData.light().copyWith(
+          primaryColor: Colors.white,
+          textTheme: ThemeData.light().textTheme.apply(
+                fontFamily: 'Product Sans',
+              ),
+          backgroundColor: Colors.white);
+}
+
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'devRant',
-      theme: ThemeData(
-        fontFamily: 'Product Sans',
-      ),
-      home: Rant(),
-    );
+    return DynamicTheme(
+        defaultBrightness: Brightness.dark,
+        data: (brightness) => _buildTheme(brightness),
+        themedWidgetBuilder: (context, theme) => MaterialApp(
+              debugShowCheckedModeBanner: false,
+              title: 'devRant',
+              theme: theme,
+              home: Rant(),
+            ));
   }
 }
 
@@ -97,48 +114,52 @@ class RantList extends State<Rant> {
                 }
               },
             ),
-            ListTile(
-              leading: Icon(Icons.wb_sunny),
-              title: Text('Toggle Dark Theme'),
-              onTap: () {
-                Scaffold.of(context).showSnackBar(SnackBar(
-                  content: Text('Coming Soon!'),
-                ));
-              },
-            )
           ],
         ),
       ),
       appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(
+            color: (Theme.of(context).brightness == Brightness.dark)
+                ? Colors.white
+                : Colors.black),
         title: Text('Mnml devRant',
             style: TextStyle(
-              color: Colors.black,
+              color: (Theme.of(context).brightness == Brightness.dark)
+                  ? Colors.white
+                  : Colors.black,
               fontWeight: FontWeight.bold,
             )),
-        backgroundColor: Colors.white,
+        backgroundColor: (Theme.of(context).brightness == Brightness.dark)
+            ? Colors.black
+            : Colors.white,
         elevation: 0.0,
         actions: <Widget>[
           IconButton(
+              icon: Icon(Icons.wb_sunny),
+              onPressed: () {
+                DynamicTheme.of(context).setBrightness(
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Brightness.light
+                        : Brightness.dark);
+              }),
+          IconButton(
               tooltip: algo,
-              icon: Icon(
-                Icons.filter_list,
-              ),
+              icon: Icon(Icons.filter_list),
               onPressed: () {
                 algo = (algo == 'recent') ? 'best' : 'recent';
                 setState(() {});
               }),
           IconButton(
-              icon: Icon(
-                Icons.refresh,
-              ),
+              icon: Icon(Icons.refresh),
               onPressed: () {
                 setState(() {});
               }),
         ],
       ),
       body: RefreshIndicator(
-        backgroundColor: Colors.white,
+        backgroundColor: (Theme.of(context).brightness == Brightness.dark)
+            ? Colors.black
+            : Colors.white,
         onRefresh: fetchRants,
         child: FutureBuilder(
             future: fetchRants(),
@@ -152,48 +173,18 @@ class RantList extends State<Rant> {
                     child: CircularProgressIndicator(),
                   );
                 case ConnectionState.done:
-                  if (snapshot.hasError) return Text('Error');
+                  if (snapshot.hasError)
+                    return Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text(
+                            'Following Error Occured :\n' +
+                                snapshot.error.toString(),
+                            style: TextStyle(fontSize: 16.0)));
                   return rantLister(_fontSize);
               }
               return null;
             }),
       ),
-      // bottomNavigationBar: BottomAppBar(
-      //   shape: CircularNotchedRectangle(),
-      //   child: new Row(
-      //     mainAxisSize: MainAxisSize.max,
-      //     mainAxisAlignment: MainAxisAlignment.start,
-      //     children: <Widget>[
-      //       IconButton(
-      //           icon: Icon(Icons.format_size),
-      //           onPressed: () {
-      //             if (_fontSize > 16) {
-      //               _fontSize -= 2;
-      //               setState(() {});
-      //             }
-      //           }),
-      //       IconButton(
-      //         icon: Icon(Icons.format_size),
-      //         onPressed: () {
-      //           if (_fontSize < 20) {
-      //             _fontSize += 2;
-      //             setState(() {});
-      //           }
-      //         },
-      //       )
-      //     ],
-      //   ),
-      // ),
-      // floatingActionButton: FloatingActionButton(
-      //   elevation: 8.0,
-      //   onPressed: () {
-      //     fetchRants();
-      //     setState(() {});
-      //   },
-      //   child: Icon(Icons.refresh),
-      //   // elevation: 2.0,
-      // ),
-      // floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
     );
   }
 
@@ -201,7 +192,9 @@ class RantList extends State<Rant> {
     return ListView.builder(
       itemCount: (rantList.length),
       itemBuilder: (context, index) => Container(
-            color: Colors.white,
+            color: (Theme.of(context).brightness == Brightness.dark)
+                ? Colors.black
+                : Colors.white,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
