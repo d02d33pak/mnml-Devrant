@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:pinch_zoom_image/pinch_zoom_image.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
+import 'userGram.dart';
 
 void main() => runApp(MyApp());
 
@@ -14,15 +15,23 @@ ThemeData _buildTheme(Brightness brightness) {
   return brightness == Brightness.dark
       ? ThemeData.dark().copyWith(
           primaryColor: Colors.black,
+          accentColor: Colors.cyanAccent,
           textTheme: ThemeData.dark().textTheme.apply(
                 fontFamily: 'Product Sans',
               ),
+          iconTheme: IconThemeData(
+            color: Colors.yellowAccent,
+          ),
           backgroundColor: Colors.black)
       : ThemeData.light().copyWith(
           primaryColor: Colors.white,
+          accentColor: Colors.redAccent,
           textTheme: ThemeData.light().textTheme.apply(
                 fontFamily: 'Product Sans',
               ),
+          iconTheme: IconThemeData(
+            color: Colors.deepPurpleAccent,
+          ),
           backgroundColor: Colors.white);
 }
 
@@ -135,6 +144,7 @@ class RantList extends State<Rant> {
         elevation: 0.0,
         actions: <Widget>[
           IconButton(
+              tooltip: 'Toggle Dark Mode',
               icon: Icon(Icons.wb_sunny),
               onPressed: () {
                 DynamicTheme.of(context).setBrightness(
@@ -150,6 +160,7 @@ class RantList extends State<Rant> {
                 setState(() {});
               }),
           IconButton(
+              tooltip: 'Refresh',
               icon: Icon(Icons.refresh),
               onPressed: () {
                 setState(() {});
@@ -206,12 +217,25 @@ class RantList extends State<Rant> {
                   onTap: () => showDialog(
                       context: context,
                       builder: (BuildContext context) {
+                        UserGram userGram;
+                        var userNo = rantList[index].userId.toString();
+                        var userUrl = 'https://devrant.com/api/users/' +
+                            userNo +
+                            '?app=3&content=favorites&skip=0';
+
+                        Future<void> fetchUser() async {
+                          var res = await http.get(userUrl);
+                          var decodedRes = jsonDecode(res.body);
+                          userGram = UserGram.fromJson(decodedRes);
+                          print(userGram.profile.about);
+                        }
+
+                        fetchUser();
+
                         return Dialog(
                             child: Container(
                                 height: 256.0,
-                                child: Center(
-                                    child: Text(
-                                        rantList[index].userId.toString()))));
+                                child: Center(child: Text('//TODO'))));
                       }),
                   leading: Container(
                       width: 50.0,
