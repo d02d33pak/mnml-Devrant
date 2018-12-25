@@ -59,6 +59,8 @@ class RantList extends State<Rant> {
   DevRant devRant;
   List<Rants> rantList;
 
+  
+
   @override
   void initState() {
     super.initState();
@@ -76,6 +78,7 @@ class RantList extends State<Rant> {
   }
 
   double _fontSize = 16.0;
+  bool _showTags = true;
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +110,7 @@ class RantList extends State<Rant> {
                 if (_fontSize < 20) {
                   _fontSize += 2;
                   setState(() {});
+                  Navigator.pop(context);
                 }
               },
             ),
@@ -120,9 +124,18 @@ class RantList extends State<Rant> {
                 if (_fontSize > 16) {
                   _fontSize -= 2;
                   setState(() {});
+                  Navigator.pop(context);
                 }
               },
             ),
+            ListTile(
+                leading: Icon(Icons.check_circle_outline),
+                title: Text('Toggle Showing Tags'),
+                onTap: () {
+                  (_showTags ? _showTags = false : _showTags = true);
+                  setState(() {});
+                  Navigator.pop(context);
+                }),
           ],
         ),
       ),
@@ -153,7 +166,7 @@ class RantList extends State<Rant> {
                         : Brightness.dark);
               }),
           IconButton(
-              tooltip: algo,
+              tooltip: 'Sort: ' + algo,
               icon: Icon(Icons.filter_list),
               onPressed: () {
                 algo = (algo == 'recent') ? 'best' : 'recent';
@@ -200,6 +213,25 @@ class RantList extends State<Rant> {
   }
 
   ListView rantLister(_fontSize) {
+    List<Widget> _fetchTags(oneRant) {
+      List<Widget> tags = new List();
+
+      if (_showTags) {
+        for (var i = 0; i < oneRant.tags.length; i++) {
+          if (oneRant.tags[i] != 'undefined') {
+            tags.add(Transform(
+                transform: Matrix4.identity()..scale(0.8),
+                child: Chip(
+                  label: Text(oneRant.tags[i]),
+                  backgroundColor: Colors.transparent,
+                  shape: StadiumBorder(side: BorderSide(color: Colors.grey)),
+                )));
+          }
+        }
+      }
+      return tags;
+    }
+
     return ListView.builder(
       itemCount: (rantList.length),
       itemBuilder: (context, index) => Container(
@@ -277,8 +309,17 @@ class RantList extends State<Rant> {
                       )),
                 ),
                 Padding(
-                    padding:
-                        EdgeInsets.only(left: 24.0, right: 24.0, top: 24.0),
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Wrap(
+                      children: _fetchTags(rantList[index]),
+                      spacing: -4.0,
+                      runSpacing: -12.0,
+                      alignment: WrapAlignment.start,
+                      crossAxisAlignment: WrapCrossAlignment.start,
+                      runAlignment: WrapAlignment.start,
+                    )),
+                Padding(
+                    padding: EdgeInsets.only(left: 24.0, right: 24.0, top: 0.0),
                     child: Text(
                       rantList[index].text,
                       style: TextStyle(
