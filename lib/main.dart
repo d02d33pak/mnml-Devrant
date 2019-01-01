@@ -8,20 +8,21 @@ import 'package:pinch_zoom_image/pinch_zoom_image.dart';
 import 'package:transparent_image/transparent_image.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'userGram.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() => runApp(MyApp());
 
+//top one is dark theme
+//bottom one is light theme
 ThemeData _buildTheme(Brightness brightness) {
   return brightness == Brightness.dark
       ? ThemeData.dark().copyWith(
           primaryColor: Colors.black,
-          accentColor: Colors.cyanAccent,
+          accentColor: Colors.yellowAccent,
           textTheme: ThemeData.dark().textTheme.apply(
                 fontFamily: 'Product Sans',
+                bodyColor: Colors.grey,
               ),
-          iconTheme: IconThemeData(
-            color: Colors.yellowAccent,
-          ),
           backgroundColor: Colors.black)
       : ThemeData.light().copyWith(
           primaryColor: Colors.white,
@@ -29,9 +30,6 @@ ThemeData _buildTheme(Brightness brightness) {
           textTheme: ThemeData.light().textTheme.apply(
                 fontFamily: 'Product Sans',
               ),
-          iconTheme: IconThemeData(
-            color: Colors.deepPurpleAccent,
-          ),
           backgroundColor: Colors.white);
 }
 
@@ -39,14 +37,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DynamicTheme(
-        defaultBrightness: Brightness.dark,
-        data: (brightness) => _buildTheme(brightness),
-        themedWidgetBuilder: (context, theme) => MaterialApp(
-              debugShowCheckedModeBanner: false,
-              title: 'devRant',
-              theme: theme,
-              home: Rant(),
-            ));
+      defaultBrightness: Brightness.dark,
+      data: (brightness) => _buildTheme(brightness),
+      themedWidgetBuilder: (context, theme) => MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'devRant',
+            theme: theme,
+            home: Rant(),
+          ),
+    );
   }
 }
 
@@ -59,17 +58,63 @@ class RantList extends State<Rant> {
   DevRant devRant;
   List<Rants> rantList;
 
-  
+  final String _kSortOrderPrefs = "recent";
+  final String _kTagToggle = "true";
+  final String _kFontValue = "16.0";
+  String _algo = "recent";
+  double _fontSize = 16.0;
+  bool _showTags = true;
+
+  //get Sorting order
+  Future<String> getSortingOrder() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    _algo = prefs.getString(_kSortOrderPrefs);
+    return prefs.getString(_kSortOrderPrefs);
+  }
+
+  //set Sorting order
+  Future<bool> setSortingOrder(String order) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.setString(_kSortOrderPrefs, order);
+  }
+
+  //get tag toggle
+  Future<bool> getTagToggle() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    _showTags = prefs.getBool(_kTagToggle) ?? true;
+    return prefs.getBool(_kTagToggle);
+  }
+
+  //set tag toggle
+  Future<bool> setTagToggle(bool value) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.setBool(_kTagToggle, value);
+  }
+
+  //get Font Size
+  Future<double> getFontSize() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    _fontSize = prefs.getDouble(_kFontValue) ?? 16.0;
+    return prefs.getDouble(_kFontValue);
+  }
+
+  //set font Size
+  Future<bool> setFontSize(double value) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.setDouble(_kFontValue, value);
+  }
 
   @override
   void initState() {
+    getSortingOrder();
+    getTagToggle();
+    getFontSize();
     super.initState();
   }
 
-  var algo = 'recent';
   Future<void> fetchRants() async {
     var url = 'https://devrant.com/api/devrant/rants?app=3&sort=' +
-        algo +
+        _algo +
         '&limit=50';
     var result = await http.get(url);
     var decodedResult = jsonDecode(result.body);
@@ -77,68 +122,17 @@ class RantList extends State<Rant> {
     rantList = devRant.rants;
   }
 
-  double _fontSize = 16.0;
-  bool _showTags = true;
-
   @override
   Widget build(BuildContext context) {
+    var whiteIfDark = (Theme.of(context).brightness == Brightness.dark)
+        ? Colors.white
+        : Colors.black;
+
+    var blackIfDark = (Theme.of(context).brightness == Brightness.dark)
+        ? Colors.black
+        : Colors.white;
+
     return Scaffold(
-      drawer: Drawer(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Container(
-              child: Image.network(
-                  'https://avatars.devrant.com/v-21_c-1_b-5_g-m_9-1_1-2_16-8_3-1_8-4_7-4_5-1_12-2_6-2_10-7_2-37_22-7_11-3_18-1_19-3_4-1_20-2.png'),
-            ),
-            ListTile(
-              leading: Icon(Icons.favorite_border),
-              title: Text('developed by d02d33pak',
-                  style: TextStyle(
-                    fontSize: 16.0,
-                  )),
-            ),
-            ListTile(
-              leading: Icon(Icons.arrow_upward),
-              title: Text(
-                'Increase Font Size',
-                style: TextStyle(
-                  fontSize: 16.0,
-                ),
-              ),
-              onTap: () {
-                if (_fontSize < 20) {
-                  _fontSize += 2;
-                  setState(() {});
-                  Navigator.pop(context);
-                }
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.arrow_downward),
-              title: Text('Decrease Font Size',
-                  style: TextStyle(
-                    fontSize: 16.0,
-                  )),
-              onTap: () {
-                if (_fontSize > 16) {
-                  _fontSize -= 2;
-                  setState(() {});
-                  Navigator.pop(context);
-                }
-              },
-            ),
-            ListTile(
-                leading: Icon(Icons.check_circle_outline),
-                title: Text('Toggle Showing Tags'),
-                onTap: () {
-                  (_showTags ? _showTags = false : _showTags = true);
-                  setState(() {});
-                  Navigator.pop(context);
-                }),
-          ],
-        ),
-      ),
       appBar: AppBar(
         iconTheme: IconThemeData(
             color: (Theme.of(context).brightness == Brightness.dark)
@@ -157,26 +151,118 @@ class RantList extends State<Rant> {
         elevation: 0.0,
         actions: <Widget>[
           IconButton(
-              tooltip: 'Toggle Dark Mode',
-              icon: Icon(Icons.wb_sunny),
-              onPressed: () {
-                DynamicTheme.of(context).setBrightness(
-                    Theme.of(context).brightness == Brightness.dark
-                        ? Brightness.light
-                        : Brightness.dark);
-              }),
-          IconButton(
-              tooltip: 'Sort: ' + algo,
-              icon: Icon(Icons.filter_list),
-              onPressed: () {
-                algo = (algo == 'recent') ? 'best' : 'recent';
-                setState(() {});
-              }),
-          IconButton(
               tooltip: 'Refresh',
               icon: Icon(Icons.refresh),
               onPressed: () {
                 setState(() {});
+              }),
+          IconButton(
+              tooltip: 'Settings',
+              icon: Icon(Icons.settings),
+              onPressed: () {
+                getFontSize();
+                showModalBottomSheet(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return new Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          SizedBox(height: 8.0),
+                          ListTile(
+                              leading: Container(
+                                  width: 50.0,
+                                  height: 50.0,
+                                  decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      image: DecorationImage(
+                                          fit: BoxFit.fill,
+                                          image: NetworkImage(
+                                              'https://avatars.devrant.com/v-21_c-3_b-5_g-m_9-1_1-2_16-8_3-1_8-4_7-4_5-1_12-2_6-2_10-7_2-37_22-7_11-3_18-1_19-3_4-1_20-2.png')))),
+                              title: Text("developed with ❤️ by d02d33pak")),
+                          ListTile(title: Text('Settings'), onTap: () {}),
+                          Row(
+                            children: <Widget>[
+                              SizedBox(width: 16.0),
+                              OutlineButton(
+                                child: Text("-"),
+                                onPressed: () {
+                                  getFontSize();
+
+                                  if (_fontSize > 16) {
+                                    setFontSize(_fontSize - 1);
+                                    setState(() {
+                                      getFontSize();
+                                    });
+                                    // Navigator.pop(context);
+                                  }
+                                },
+                              ),
+                              Expanded(
+                                  child: Center(
+                                      child: Text("Font Size : " +
+                                          _fontSize.toString()))),
+                              OutlineButton(
+                                child: Text("+"),
+                                onPressed: () {
+                                  getFontSize();
+                                  if (_fontSize < 20) {
+                                    setFontSize(_fontSize + 1);
+                                    setState(() {
+                                      getFontSize();
+                                    });
+                                    // Navigator.pop(context);
+                                  }
+                                },
+                              ),
+                              SizedBox(width: 16.0),
+                            ],
+                          ),
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: <Widget>[
+                                OutlineButton(
+                                  child: Text("Toggle Theme"),
+                                  onPressed: () {
+                                    DynamicTheme.of(context).setBrightness(
+                                        Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Brightness.light
+                                            : Brightness.dark);
+                                  },
+                                ),
+                                OutlineButton(
+                                  child: Text("Sort : " +
+                                      _algo[0].toUpperCase() +
+                                      _algo.substring(1)),
+                                  onPressed: () {
+                                    (_algo == "recent")
+                                        ? setSortingOrder("best")
+                                        : setSortingOrder("recent");
+                                    setState(() {
+                                      getSortingOrder();
+                                    });
+                                  },
+                                ),
+                                OutlineButton(
+                                  child: Text("Toggle Tags"),
+                                  onPressed: () {
+                                    getTagToggle();
+                                    (_showTags == true
+                                        ? setTagToggle(false)
+                                        : setTagToggle(true));
+
+                                    setState(() {
+                                      getTagToggle();
+                                    });
+                                  },
+                                ),
+                              ]),
+                          SizedBox(
+                            height: 16.0,
+                          ),
+                        ],
+                      );
+                    });
               }),
         ],
       ),
@@ -215,6 +301,7 @@ class RantList extends State<Rant> {
   ListView rantLister(_fontSize) {
     List<Widget> _fetchTags(oneRant) {
       List<Widget> tags = new List();
+      getTagToggle();
 
       if (_showTags) {
         for (var i = 0; i < oneRant.tags.length; i++) {
@@ -318,6 +405,11 @@ class RantList extends State<Rant> {
                       crossAxisAlignment: WrapCrossAlignment.start,
                       runAlignment: WrapAlignment.start,
                     )),
+                (_showTags
+                    ? SizedBox()
+                    : SizedBox(
+                        height: 24.0,
+                      )),
                 Padding(
                     padding: EdgeInsets.only(left: 24.0, right: 24.0, top: 0.0),
                     child: Text(
