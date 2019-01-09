@@ -20,6 +20,7 @@ dependencies:
   intl: ^0.15.7
   pinch_zoom_image: "^0.2.5"
   transparent_image: ^0.1.0
+  cached_network_image: ^0.5.1
   flutter:
     sdk: flutter
 

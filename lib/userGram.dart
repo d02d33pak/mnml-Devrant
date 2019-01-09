@@ -92,14 +92,14 @@ class Profile {
 }
 
 class Content {
-  Content content;
+  Contents content;
   Counts counts;
 
   Content({this.content, this.counts});
 
   Content.fromJson(Map<String, dynamic> json) {
     content =
-        json['content'] != null ? new Content.fromJson(json['content']) : null;
+        json['content'] != null ? new Contents.fromJson(json['content']) : null;
     counts =
         json['counts'] != null ? new Counts.fromJson(json['counts']) : null;
   }
@@ -117,52 +117,81 @@ class Content {
 }
 
 class Contents {
-  List<Null> rants;
-  List<Null> upvoted;
-  List<Null> comments;
-  List<Favorites> favorites;
+  List<Rantss> rants;
+  int counter = 0;
+  // List<Null> upvoted;
+  // List<Null> comments;
+  // List<Null> favorites;
 
-  Contents({this.rants, this.upvoted, this.comments, this.favorites});
+//if above variables are needed then paste these inside {} below
+// , this.upvoted, this.comments, this.favorites
+  Contents({this.rants});
 
   Contents.fromJson(Map<String, dynamic> json) {
-    if (json['favorites'] != null) {
-      favorites = new List<Favorites>();
-      json['favorites'].forEach((v) {
-        favorites.add(new Favorites.fromJson(v));
+    if (json['rants'] != null) {
+      rants = new List<Rantss>();
+      json['rants'].forEach((v) {
+        counter++;
+        rants.add(new Rantss.fromJson(v));
       });
     }
+    // if (json['upvoted'] != null) {
+    //   upvoted = new List<Null>();
+    //   json['upvoted'].forEach((v) {
+    //     upvoted.add(new Null.fromJson(v));
+    //   });
+    // }
+    // if (json['comments'] != null) {
+    //   comments = new List<Null>();
+    //   json['comments'].forEach((v) {
+    //     comments.add(new Null.fromJson(v));
+    //   });
+    // }
+    // if (json['favorites'] != null) {
+    //   favorites = new List<Null>();
+    //   json['favorites'].forEach((v) {
+    //     favorites.add(new Null.fromJson(v));
+    //   });
+    // }
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.favorites != null) {
-      data['favorites'] = this.favorites.map((v) => v.toJson()).toList();
+    if (this.rants != null) {
+      data['rants'] = this.rants.map((v) => v.toJson()).toList();
     }
+    // if (this.upvoted != null) {
+    //   data['upvoted'] = this.upvoted.map((v) => v.toJson()).toList();
+    // }
+    // if (this.comments != null) {
+    //   data['comments'] = this.comments.map((v) => v.toJson()).toList();
+    // }
+    // if (this.favorites != null) {
+    //   data['favorites'] = this.favorites.map((v) => v.toJson()).toList();
+    // }
     return data;
   }
 }
 
-class Favorites {
+class Rantss {
   int id;
   String text;
   int score;
   int createdTime;
-  String attachedImage;
+  AttachedImage attachedImage;
   int numComments;
   List<String> tags;
   int voteState;
   bool edited;
   int rt;
   int rc;
-  List<Links> links;
-  bool special;
   int userId;
   String userUsername;
   int userScore;
   UserAvatar userAvatar;
   UserAvatarLg userAvatarLg;
 
-  Favorites(
+  Rantss(
       {this.id,
       this.text,
       this.score,
@@ -174,33 +203,26 @@ class Favorites {
       this.edited,
       this.rt,
       this.rc,
-      this.links,
-      this.special,
       this.userId,
       this.userUsername,
       this.userScore,
       this.userAvatar,
       this.userAvatarLg});
 
-  Favorites.fromJson(Map<String, dynamic> json) {
+  Rantss.fromJson(Map<String, dynamic> json) {
     id = json['id'];
     text = json['text'];
     score = json['score'];
     createdTime = json['created_time'];
-    attachedImage = json['attached_image'];
+    attachedImage = (json['attached_image'] != null && json['attached_image'] != "")
+        ? new AttachedImage.fromJson(json['attached_image'])
+        : null;
     numComments = json['num_comments'];
     tags = json['tags'].cast<String>();
     voteState = json['vote_state'];
     edited = json['edited'];
     rt = json['rt'];
     rc = json['rc'];
-    if (json['links'] != null) {
-      links = new List<Links>();
-      json['links'].forEach((v) {
-        links.add(new Links.fromJson(v));
-      });
-    }
-    special = json['special'];
     userId = json['user_id'];
     userUsername = json['user_username'];
     userScore = json['user_score'];
@@ -218,17 +240,15 @@ class Favorites {
     data['text'] = this.text;
     data['score'] = this.score;
     data['created_time'] = this.createdTime;
-    data['attached_image'] = this.attachedImage;
+    if (this.attachedImage != null) {
+      data['attached_image'] = this.attachedImage.toJson();
+    }
     data['num_comments'] = this.numComments;
     data['tags'] = this.tags;
     data['vote_state'] = this.voteState;
     data['edited'] = this.edited;
     data['rt'] = this.rt;
     data['rc'] = this.rc;
-    if (this.links != null) {
-      data['links'] = this.links.map((v) => v.toJson()).toList();
-    }
-    data['special'] = this.special;
     data['user_id'] = this.userId;
     data['user_username'] = this.userUsername;
     data['user_score'] = this.userScore;
@@ -242,43 +262,24 @@ class Favorites {
   }
 }
 
-class Links {
-  String type;
+class AttachedImage {
   String url;
-  String shortUrl;
-  String title;
-  int start;
-  int end;
-  int special;
+  int width;
+  int height;
 
-  Links(
-      {this.type,
-      this.url,
-      this.shortUrl,
-      this.title,
-      this.start,
-      this.end,
-      this.special});
+  AttachedImage({this.url, this.width, this.height});
 
-  Links.fromJson(Map<String, dynamic> json) {
-    type = json['type'];
+  AttachedImage.fromJson(Map<String, dynamic> json) {
     url = json['url'];
-    shortUrl = json['short_url'];
-    title = json['title'];
-    start = json['start'];
-    end = json['end'];
-    special = json['special'];
+    width = json['width'];
+    height = json['height'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['type'] = this.type;
     data['url'] = this.url;
-    data['short_url'] = this.shortUrl;
-    data['title'] = this.title;
-    data['start'] = this.start;
-    data['end'] = this.end;
-    data['special'] = this.special;
+    data['width'] = this.width;
+    data['height'] = this.height;
     return data;
   }
 }

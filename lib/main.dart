@@ -9,6 +9,7 @@ import 'package:transparent_image/transparent_image.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'userGram.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 void main() => runApp(MyApp());
 
@@ -18,7 +19,7 @@ ThemeData _buildTheme(Brightness brightness) {
   return brightness == Brightness.dark
       ? ThemeData.dark().copyWith(
           primaryColor: Colors.black,
-          accentColor: Colors.yellowAccent,
+          accentColor: Colors.cyanAccent,
           textTheme: ThemeData.dark().textTheme.apply(
                 fontFamily: 'Product Sans',
                 bodyColor: Colors.grey,
@@ -134,20 +135,13 @@ class RantList extends State<Rant> {
 
     return Scaffold(
       appBar: AppBar(
-        iconTheme: IconThemeData(
-            color: (Theme.of(context).brightness == Brightness.dark)
-                ? Colors.white
-                : Colors.black),
+        iconTheme: IconThemeData(color: whiteIfDark),
         title: Text('Mnml devRant',
             style: TextStyle(
-              color: (Theme.of(context).brightness == Brightness.dark)
-                  ? Colors.white
-                  : Colors.black,
+              color: whiteIfDark,
               fontWeight: FontWeight.bold,
             )),
-        backgroundColor: (Theme.of(context).brightness == Brightness.dark)
-            ? Colors.black
-            : Colors.white,
+        backgroundColor: blackIfDark,
         elevation: 0.0,
         actions: <Widget>[
           IconButton(
@@ -178,7 +172,8 @@ class RantList extends State<Rant> {
                                           fit: BoxFit.fill,
                                           image: NetworkImage(
                                               'https://avatars.devrant.com/v-21_c-3_b-5_g-m_9-1_1-2_16-8_3-1_8-4_7-4_5-1_12-2_6-2_10-7_2-37_22-7_11-3_18-1_19-3_4-1_20-2.png')))),
-                              title: Text("developed with ❤️ by d02d33pak")),
+                              title: Text(
+                                  "developed by d02d33pak mostly on weekends")),
                           ListTile(title: Text('Settings'), onTap: () {}),
                           Row(
                             children: <Widget>[
@@ -190,6 +185,11 @@ class RantList extends State<Rant> {
 
                                   if (_fontSize > 16) {
                                     setFontSize(_fontSize - 1);
+                                    DynamicTheme.of(context).setBrightness(
+                                        Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Brightness.dark
+                                            : Brightness.light);
                                     setState(() {
                                       getFontSize();
                                     });
@@ -207,6 +207,11 @@ class RantList extends State<Rant> {
                                   getFontSize();
                                   if (_fontSize < 20) {
                                     setFontSize(_fontSize + 1);
+                                    DynamicTheme.of(context).setBrightness(
+                                        Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Brightness.dark
+                                            : Brightness.light);
                                     setState(() {
                                       getFontSize();
                                     });
@@ -218,7 +223,7 @@ class RantList extends State<Rant> {
                             ],
                           ),
                           Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: <Widget>[
                                 OutlineButton(
                                   child: Text("Toggle Theme"),
@@ -238,6 +243,12 @@ class RantList extends State<Rant> {
                                     (_algo == "recent")
                                         ? setSortingOrder("best")
                                         : setSortingOrder("recent");
+
+                                    DynamicTheme.of(context).setBrightness(
+                                        Theme.of(context).brightness ==
+                                                Brightness.dark
+                                            ? Brightness.dark
+                                            : Brightness.light);
                                     setState(() {
                                       getSortingOrder();
                                     });
@@ -267,9 +278,7 @@ class RantList extends State<Rant> {
         ],
       ),
       body: RefreshIndicator(
-        backgroundColor: (Theme.of(context).brightness == Brightness.dark)
-            ? Colors.black
-            : Colors.white,
+        backgroundColor: blackIfDark,
         onRefresh: fetchRants,
         child: FutureBuilder(
             future: fetchRants(),
@@ -286,10 +295,11 @@ class RantList extends State<Rant> {
                   if (snapshot.hasError)
                     return Padding(
                         padding: EdgeInsets.all(16.0),
-                        child: Text(
-                            'Following Error Occured :\n' +
-                                snapshot.error.toString(),
-                            style: TextStyle(fontSize: 16.0)));
+                        child: Center(
+                            child: Text(
+                                'Following Error Occured :\n' +
+                                    snapshot.error.toString(),
+                                style: TextStyle(fontSize: 16.0))));
                   return rantLister(_fontSize);
               }
               return null;
@@ -309,6 +319,8 @@ class RantList extends State<Rant> {
             tags.add(Transform(
                 transform: Matrix4.identity()..scale(0.8),
                 child: Chip(
+                  labelStyle:
+                      TextStyle(fontFamily: 'Product Sans', color: Colors.grey),
                   label: Text(oneRant.tags[i]),
                   backgroundColor: Colors.transparent,
                   shape: StadiumBorder(side: BorderSide(color: Colors.grey)),
@@ -340,21 +352,131 @@ class RantList extends State<Rant> {
                         var userNo = rantList[index].userId.toString();
                         var userUrl = 'https://devrant.com/api/users/' +
                             userNo +
-                            '?app=3&content=favorites&skip=0';
+                            '?app=3&content=rants&skip=0';
 
                         Future<void> fetchUser() async {
                           var res = await http.get(userUrl);
                           var decodedRes = jsonDecode(res.body);
                           userGram = UserGram.fromJson(decodedRes);
-                          print(userGram.profile.about);
+
+                          return userGram;
                         }
 
                         fetchUser();
 
-                        return Dialog(
-                            child: Container(
-                                height: 256.0,
-                                child: Center(child: Text('//TODO'))));
+                        return Card(
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 8.0, vertical: 32.0),
+                            clipBehavior: Clip.antiAliasWithSaveLayer,
+                            elevation: 16.0,
+                            child: Center(
+                                child: FutureBuilder(
+                                    future: fetchUser(),
+                                    builder: (BuildContext context,
+                                        AsyncSnapshot snapshot) {
+                                      switch (snapshot.connectionState) {
+                                        case ConnectionState.none:
+                                          return Text('Press Button to Start.');
+                                        case ConnectionState.active:
+                                        case ConnectionState.waiting:
+                                          return Center(
+                                            child: CircularProgressIndicator(),
+                                          );
+                                        case ConnectionState.done:
+                                          if (snapshot.hasError)
+                                            return Padding(
+                                                padding: EdgeInsets.all(16.0),
+                                                child: Center(
+                                                    child: Text(
+                                                        'Following Error Occured :\n' +
+                                                            snapshot.error
+                                                                .toString(),
+                                                        style: TextStyle(
+                                                            fontSize: 16.0))));
+                                          return Column(
+                                            children: <Widget>[
+                                              Image.network(
+                                                  "https://avatars.devrant.com/" +
+                                                      userGram
+                                                          .profile.avatar.i),
+                                              SizedBox(
+                                                height: 16.0,
+                                              ),
+                                              Text(
+                                                userGram.profile.username,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 20.0,
+                                                ),
+                                              ),
+                                              SizedBox(
+                                                height: 16.0,
+                                              ),
+                                              Expanded(
+                                                flex: 1,
+                                                child: Text(
+                                                  "Rants",
+                                                ),
+                                              ),
+                                              Expanded(
+                                                flex: 1,
+                                                child: Text(
+                                                  "Location",
+                                                ),
+                                              ),
+                                              Expanded(
+                                                flex: 1,
+                                                child: Text(
+                                                  "++",
+                                                ),
+                                              ),
+                                              Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceEvenly,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.center,
+                                                  children: <Widget>[
+                                                    Text(
+                                                      userGram.profile.content
+                                                          .counts.rants
+                                                          .toString(),
+                                                    ),
+                                                    Text(
+                                                      userGram.profile.location
+                                                              .isNotEmpty
+                                                          ? userGram
+                                                              .profile.location
+                                                          : "Unknown",
+                                                    ),
+                                                    Text(userGram.profile.score
+                                                        .toString())
+                                                  ]),
+                                              SizedBox(
+                                                height: 16.0,
+                                              ),
+                                              Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child: Wrap(
+                                                      runAlignment:
+                                                          WrapAlignment.center,
+                                                      children: <Widget>[
+                                                        Text(
+                                                          userGram
+                                                                  .profile
+                                                                  .skills
+                                                                  .isNotEmpty
+                                                              ? userGram.profile
+                                                                  .skills
+                                                              : "Skills : Unknown",
+                                                        ),
+                                                      ])),
+                                            ],
+                                          );
+                                      }
+                                      print("returning null");
+                                      return null;
+                                    })));
                       }),
                   leading: Container(
                       width: 50.0,
@@ -375,6 +497,10 @@ class RantList extends State<Rant> {
                         child: Text(rantList[index].userUsername,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
+                              color: (Theme.of(context).brightness ==
+                                      Brightness.dark)
+                                  ? Colors.white
+                                  : Colors.black,
                             )),
                       ),
                       Container(
